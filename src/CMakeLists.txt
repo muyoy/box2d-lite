@@ -1,6 +1,7 @@
 set(BOX2D_SOURCE_FILES
 	Arbiter.cpp
 	Body.cpp
+	Circle.cpp
 	Collide.cpp
 	Joint.cpp
 	World.cpp)
@@ -8,6 +9,7 @@ set(BOX2D_SOURCE_FILES
 set(BOX2D_HEADER_FILES
 	../include/box2d-lite/Arbiter.h
 	../include/box2d-lite/Body.h
+	../include/box2d-lite/Circle.h
 	../include/box2d-lite/Joint.h
 	../include/box2d-lite/MathUtils.h
 	../include/box2d-lite/World.h)

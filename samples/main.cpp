@@ -23,21 +23,25 @@
 #include "box2d-lite/World.h"
 #include "box2d-lite/Body.h"
 #include "box2d-lite/Joint.h"
+#include "box2d-lite/Circle.h"
 
 namespace
 {
 	GLFWwindow* mainWindow = NULL;
 
 	Body bodies[200];
+	Circle circles[200];
 	Joint joints[100];
 	
 	Body* bomb = NULL;
+	Body* player = NULL;
 
 	float timeStep = 1.0f / 60.0f;
 	int iterations = 10;
 	Vec2 gravity(0.0f, -10.0f);
 
 	int numBodies = 0;
+	int numCircle = 0;
 	int numJoints = 0;
 
 	int demoIndex = 0;
@@ -90,6 +94,26 @@ static void DrawBody(Body* body)
 	glEnd();
 }
 
+static void DrawCircle(Circle* circle)
+{
+	Mat22 R(circle->rotation);
+	Vec2 x = circle->position;
+	Vec2 h = 0.5f * circle->width;
+
+	Vec2 v1 = x + R * Vec2(h.x, h.y);
+
+	glColor3f(1.0f, 1.0f, 0.0f);
+	glBegin(GL_LINE_LOOP);
+	for (int i = 0; i < 360; i++)
+	{
+		float ang = (i * k_pi / 180);
+		v1.x = x.x + (circle->width.x * cos(ang));
+		v1.y = x.y + (circle->width.y * sin(ang));
+		glVertex2f(v1.x, v1.y);
+	}
+	glEnd();
+}
+
 static void DrawJoint(Joint* joint)
 {
 	Body* b1 = joint->body1;
@@ -118,7 +142,7 @@ static void LaunchBomb()
 	if (!bomb)
 	{
 		bomb = bodies + numBodies;
-		bomb->Set(Vec2(1.0f, 1.0f), 50.0f);
+		bomb->Set(Vec2(1.0f, 1.0f), 10.f);
 		bomb->friction = 0.2f;
 		world.Add(bomb);
 		++numBodies;
@@ -131,21 +155,29 @@ static void LaunchBomb()
 }
 
 // Single box
-static void Demo1(Body* b, Joint* j)
+static void Demo1(Body* b, Joint* j, Circle* c)
 {
 	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
 	b->position.Set(0.0f, -0.5f * b->width.y);
 	world.Add(b);
 	++b; ++numBodies;
 
-	b->Set(Vec2(1.0f, 1.0f), 200.0f);
-	b->position.Set(0.0f, 4.0f);
-	world.Add(b);
-	++b; ++numBodies;
+	player = bodies + numBodies;
+	player->Set(Vec2(1.0f, 1.0f), 100.0f);
+	player->position.Set(0.0f, 2.0f);
+	player->friction = 5.5f;
+	world.Add(player);
+	++numBodies;
+
+	c->Set(Vec2(1.0f, 1.0f), 1.0f);
+	c->position.Set(0.0f, 4.0f);
+	world.Add(c);
+	++c; ++numCircle;
+
 }
 
 // A simple pendulum
-static void Demo2(Body* b, Joint* j)
+static void Demo2(Body* b, Joint* j, Circle* c)
 {
 	Body* b1 = b + 0;
 	b1->Set(Vec2(100.0f, 20.0f), FLT_MAX);
@@ -155,7 +187,7 @@ static void Demo2(Body* b, Joint* j)
 	world.Add(b1);
 
 	Body* b2 = b + 1;
-	b2->Set(Vec2(1.0f, 1.0f), 100.0f);
+	b2->Set(Vec2(1.0f, 1.0f), 1100.0f);
 	b2->friction = 0.2f;
 	b2->position.Set(9.0f, 11.0f);
 	b2->rotation = 0.0f;
@@ -170,7 +202,7 @@ static void Demo2(Body* b, Joint* j)
 }
 
 // Varying friction coefficients
-static void Demo3(Body* b, Joint* j)
+static void Demo3(Body* b, Joint* j, Circle* c)
 {
 	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
 	b->position.Set(0.0f, -0.5f * b->width.y);
@@ -217,7 +249,7 @@ static void Demo3(Body* b, Joint* j)
 }
 
 // A vertical stack
-static void Demo4(Body* b, Joint* j)
+static void Demo4(Body* b, Joint* j, Circle* c)
 {
 	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
 	b->friction = 0.2f;
@@ -238,7 +270,7 @@ static void Demo4(Body* b, Joint* j)
 }
 
 // A pyramid
-static void Demo5(Body* b, Joint* j)
+static void Demo5(Body* b, Joint* j, Circle* c)
 {
 	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
 	b->friction = 0.2f;
@@ -271,7 +303,7 @@ static void Demo5(Body* b, Joint* j)
 }
 
 // A teeter
-static void Demo6(Body* b, Joint* j)
+static void Demo6(Body* b, Joint* j, Circle* c)
 {
 	Body* b1 = b + 0;
 	b1->Set(Vec2(100.0f, 20.0f), FLT_MAX);
@@ -307,7 +339,7 @@ static void Demo6(Body* b, Joint* j)
 }
 
 // A suspension bridge
-static void Demo7(Body* b, Joint* j)
+static void Demo7(Body* b, Joint* j, Circle* c)
 {
 	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
 	b->friction = 0.2f;
@@ -363,7 +395,7 @@ static void Demo7(Body* b, Joint* j)
 }
 
 // Dominos
-static void Demo8(Body* b, Joint* j)
+static void Demo8(Body* b, Joint* j, Circle* c)
 {
 	Body* b1 = b;
 	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
@@ -440,7 +472,7 @@ static void Demo8(Body* b, Joint* j)
 }
 
 // A multi-pendulum
-static void Demo9(Body* b, Joint* j)
+static void Demo9(Body* b, Joint* j, Circle* c)
 {
 	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
 	b->friction = 0.2f;
@@ -495,7 +527,7 @@ static void Demo9(Body* b, Joint* j)
 	}
 }
 
-void (*demos[])(Body* b, Joint* j) = {Demo1, Demo2, Demo3, Demo4, Demo5, Demo6, Demo7, Demo8, Demo9};
+void (*demos[])(Body* b, Joint* j, Circle* c) = {Demo1, Demo2, Demo3, Demo4, Demo5, Demo6, Demo7, Demo8, Demo9};
 const char* demoStrings[] = {
 	"Demo 1: A Single Box",
 	"Demo 2: Simple Pendulum",
@@ -512,10 +544,12 @@ static void InitDemo(int index)
 	world.Clear();
 	numBodies = 0;
 	numJoints = 0;
+	numCircle = 0;
 	bomb = NULL;
+	player = NULL;
 
 	demoIndex = index;
-	demos[index](bodies, joints);
+	demos[index](bodies, joints, circles);
 }
 
 static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -559,6 +593,17 @@ static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int 
 	case GLFW_KEY_SPACE:
 		LaunchBomb();
 		break;
+	case GLFW_KEY_RIGHT:
+		player->velocity = Vec2(10.0f,0.0f);
+		break;
+	case GLFW_KEY_LEFT:
+		player->velocity = Vec2(-10.0f, 0.0f);
+		break;
+	case GLFW_KEY_UP:
+		player->velocity = 10.0f * player->position;
+		break;
+	case GLFW_KEY_DOWN:
+		player->velocity = -10.0f * player->position;
 	}
 }
 
@@ -680,6 +725,9 @@ int main(int, char**)
 
 		for (int i = 0; i < numBodies; ++i)
 			DrawBody(bodies + i);
+
+		for (int i = 0; i < numCircle; ++i)
+			DrawCircle(circles + i);
 
 		for (int i = 0; i < numJoints; ++i)
 			DrawJoint(joints + i);

@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\include",
+    "\\include\\box2d-lite",
+    "\\samples",
+    "\\src"
+  ],
+  "SelectedNode": "\\src\\Collide.cpp",
+  "PreviewInSolutionExplorer": false
+}

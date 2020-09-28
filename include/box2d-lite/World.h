@@ -19,6 +19,7 @@
 
 struct Body;
 struct Joint;
+struct Circle;
 
 struct World
 {
@@ -26,6 +27,7 @@ struct World
 
 	void Add(Body* body);
 	void Add(Joint* joint);
+	void Add(Circle* circles);
 	void Clear();
 
 	void Step(float dt);
@@ -33,6 +35,7 @@ struct World
 	void BroadPhase();
 
 	std::vector<Body*> bodies;
+	std::vector<Circle*> circles;
 	std::vector<Joint*> joints;
 	std::map<ArbiterKey, Arbiter> arbiters;
 	Vec2 gravity;

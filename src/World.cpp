@@ -12,6 +12,7 @@
 #include "box2d-lite/World.h"
 #include "box2d-lite/Body.h"
 #include "box2d-lite/Joint.h"
+#include "box2d-lite/Circle.h"
 
 using std::vector;
 using std::map;
@@ -29,6 +30,11 @@ void World::Add(Body* body)
 	bodies.push_back(body);
 }
 
+void World::Add(Circle* circle)
+{
+	circles.push_back(circle);
+}
+
 void World::Add(Joint* joint)
 {
 	joints.push_back(joint);
@@ -38,6 +44,7 @@ void World::Clear()
 {
 	bodies.clear();
 	joints.clear();
+	circles.clear();
 	arbiters.clear();
 }
 
@@ -132,5 +139,29 @@ void World::Step(float dt)
 
 		b->force.Set(0.0f, 0.0f);
 		b->torque = 0.0f;
+	}
+
+	// Integrate forces.
+	for (int i = 0; i < (int)circles.size(); ++i)
+	{
+		Circle* c = circles[i];
+
+		if (c->invMass == 0.0f)
+			continue;
+
+		c->velocity += dt * (gravity + c->invMass * c->force);
+		c->angularVelocity += dt * c->invI * c->torque;
+	}
+
+	// Integrate Velocities
+	for (int i = 0; i < (int)circles.size(); ++i)
+	{
+		Circle* c = circles[i];
+
+		c->position += dt * c->velocity;
+		c->rotation += dt * c->angularVelocity;
+
+		c->force.Set(0.0f, 0.0f);
+		c->torque = 0.0f;
 	}
 }
