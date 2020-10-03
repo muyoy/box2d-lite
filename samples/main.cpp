@@ -600,10 +600,10 @@ static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int 
 		player->velocity = Vec2(-10.0f, 0.0f);
 		break;
 	case GLFW_KEY_UP:
-		player->velocity = 10.0f * player->position;
+		player->velocity = Vec2(0.0f, 10.0f);
 		break;
 	case GLFW_KEY_DOWN:
-		player->velocity = -10.0f * player->position;
+		player->velocity = Vec2(0.0f, -10.0f);
 	}
 }
 

@@ -1,11 +1,13 @@
 {
   "ExpandedNodes": [
     "",
+    "\\extern\\glfw\\include",
+    "\\extern\\glfw\\include\\GLFW",
     "\\include",
     "\\include\\box2d-lite",
     "\\samples",
     "\\src"
   ],
-  "SelectedNode": "\\src\\Collide.cpp",
+  "SelectedNode": "\\samples\\CMakeLists.txt",
   "PreviewInSolutionExplorer": false
 }
