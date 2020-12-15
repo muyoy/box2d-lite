@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\GitHub\box2d-lite\CMakeFiles\b959b463dc7d30cc9f2b71bb31bfbf06\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{7C01CEB3-F567-3960-B68D-E6923DF1A4BA}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,11 @@
+D:/GitHub/box2d-lite/CMakeFiles/ALL_BUILD.dir
+D:/GitHub/box2d-lite/CMakeFiles/ZERO_CHECK.dir
+D:/GitHub/box2d-lite/src/CMakeFiles/box2d-lite.dir
+D:/GitHub/box2d-lite/extern/glad/CMakeFiles/glad.dir
+D:/GitHub/box2d-lite/extern/glad/CMakeFiles/ALL_BUILD.dir
+D:/GitHub/box2d-lite/extern/glfw/CMakeFiles/glfw.dir
+D:/GitHub/box2d-lite/extern/glfw/CMakeFiles/ALL_BUILD.dir
+D:/GitHub/box2d-lite/extern/imgui/CMakeFiles/imgui.dir
+D:/GitHub/box2d-lite/extern/imgui/CMakeFiles/ALL_BUILD.dir
+D:/GitHub/box2d-lite/samples/CMakeFiles/samples.dir
+D:/GitHub/box2d-lite/samples/CMakeFiles/ALL_BUILD.dir

@@ -4,8 +4,8 @@
 * Permission to use, copy, modify, distribute and sell this software
 * and its documentation for any purpose is hereby granted without fee,
 * provided that the above copyright notice appear in all copies.
-* Erin Catto makes no representations about the suitability 
-* of this software for any purpose.  
+* Erin Catto makes no representations about the suitability
+* of this software for any purpose.
 * It is provided "as is" without express or implied warranty.
 */
 
@@ -30,11 +30,25 @@ namespace
 
 	Body bodies[200];
 	Joint joints[100];
-	
-	Body* bomb = NULL;
 
-	float timeStep = 1.0f / 60.0f;
-	int iterations = 10;
+	Body* bomb = NULL;
+	Body* player = NULL;
+	Body* item = NULL;
+	Body* walls[6];
+	Body* thorn[6];
+
+	float timeStep = 0.0f;
+	//GameSetting
+	float score = 0.0f;
+	float MaxScore = 0.0f;
+	float speed = 60.0f;
+	bool isJump = false;
+	bool isDead = false;
+	float jump = 10.0f;
+	float tab = 0.0f;
+	float rot = 0.3f;
+
+	float iterations = 10;
 	Vec2 gravity(0.0f, -10.0f);
 
 	int numBodies = 0;
@@ -68,26 +82,73 @@ static void DrawText(int x, int y, const char* string)
 
 static void DrawBody(Body* body)
 {
-	Mat22 R(body->rotation);
-	Vec2 x = body->position;
-	Vec2 h = 0.5f * body->width;
+	if (body->shape == Body::box)
+	{
+		Mat22 R(body->rotation);
+		Vec2 x = body->position;
+		Vec2 h = 0.5f * body->width;
 
-	Vec2 v1 = x + R * Vec2(-h.x, -h.y);
-	Vec2 v2 = x + R * Vec2( h.x, -h.y);
-	Vec2 v3 = x + R * Vec2( h.x,  h.y);
-	Vec2 v4 = x + R * Vec2(-h.x,  h.y);
+		Vec2 v1 = x + R * Vec2(-h.x, -h.y);
+		Vec2 v2 = x + R * Vec2(h.x, -h.y);
+		Vec2 v3 = x + R * Vec2(h.x, h.y);
+		Vec2 v4 = x + R * Vec2(-h.x, h.y);
 
-	if (body == bomb)
-		glColor3f(0.4f, 0.9f, 0.4f);
-	else
-		glColor3f(0.8f, 0.8f, 0.9f);
+		if (body == bomb)
+			glColor3f(0.4f, 0.9f, 0.4f);
+		else if(body->tag == 1)
+			glColor3f(0.0f, 0.5f, 1.0f);
+		else
+			glColor3f(0.8f, 0.8f, 0.9f);
 
-	glBegin(GL_LINE_LOOP);
-	glVertex2f(v1.x, v1.y);
-	glVertex2f(v2.x, v2.y);
-	glVertex2f(v3.x, v3.y);
-	glVertex2f(v4.x, v4.y);
-	glEnd();
+		glBegin(GL_LINE_LOOP);
+		glVertex2f(v1.x, v1.y);
+		glVertex2f(v2.x, v2.y);
+		glVertex2f(v3.x, v3.y);
+		glVertex2f(v4.x, v4.y);
+		glEnd();
+	}
+	else if (body->shape == Body::circle)
+	{
+		Mat22 R(body->rotation);
+		Vec2 x = body->position;
+		Vec2 h = 0.5f * body->width;
+
+		Vec2 v[360];
+
+		for (int i = 0; i < 360; i++)
+		{
+			float ang = (i * k_pi / 180);
+			v[i] = x + R * Vec2(h.x * sin(ang), h.y * cos(ang));
+		}
+
+		glColor3f(1.0f, 1.0f, 1.0f);
+
+		glBegin(GL_LINE_LOOP);
+		for (int i = 0; i < 360; i++)
+		{
+			glVertex2f(v[i].x, v[i].y);
+			glColor3f(1.0 - (i / 255.0), i / 255.0, i / 255.0);
+		}
+		glEnd();
+	}
+	else if (body->shape == Body::triangle)
+	{
+		Mat22 R(body->rotation);
+		Vec2 x = body->position;
+		Vec2 h = 0.5f * body->width;
+
+		Vec2 v1 = x + R * Vec2(-h.x, -h.y);
+		Vec2 v2 = x + R * Vec2(h.x, -h.y);
+		Vec2 v3 = x + R * Vec2(0.5f * (-h.x + h.x), h.y);
+
+		glColor3f(1.0f, 0.0f, 0.0f);
+
+		glBegin(GL_POLYGON);
+		glVertex2f(v1.x, v1.y);
+		glVertex2f(v2.x, v2.y);
+		glVertex2f(v3.x, v3.y);
+		glEnd();
+	}
 }
 
 static void DrawJoint(Joint* joint)
@@ -118,7 +179,7 @@ static void LaunchBomb()
 	if (!bomb)
 	{
 		bomb = bodies + numBodies;
-		bomb->Set(Vec2(1.0f, 1.0f), 50.0f);
+		bomb->Set(Vec2(1.0f, 1.0f), 10.f);
 		bomb->friction = 0.2f;
 		world.Add(bomb);
 		++numBodies;
@@ -133,15 +194,49 @@ static void LaunchBomb()
 // Single box
 static void Demo1(Body* b, Joint* j)
 {
-	b->Set(Vec2(100.0f, 20.0f), FLT_MAX);
-	b->position.Set(0.0f, -0.5f * b->width.y);
+	b->Set(Vec2(65.0f, 20.0f), FLT_MAX);
+	b->position.Set(20.0f, -0.5f * b->width.y);
 	world.Add(b);
 	++b; ++numBodies;
+	
+	for (int i = 0; i < 6; i++)
+	{
+		walls[i] = bodies + numBodies;
+		walls[i]->Set(Vec2(1.0f, Random(1.0f, 3.0f)), FLT_MAX);
+		walls[i]->position.Set(tab, 0.5f * walls[i]->width.y);
+		walls[i]->velocity = Vec2(-5.0f, 0.0f);
+		walls[i]->tag = 1;
+		world.Add(walls[i]);
+		tab += 7.0;
+		++numBodies;
+	}
 
-	b->Set(Vec2(1.0f, 1.0f), 200.0f);
-	b->position.Set(0.0f, 4.0f);
-	world.Add(b);
-	++b; ++numBodies;
+	float x = -18.0f;
+	for (int j = 0; j < 6; j++)
+	{
+		thorn[j] = bodies + numBodies;
+		thorn[j]->Set(Vec2(1.0f, 1.0f), FLT_MAX);
+		thorn[j]->position.Set(x, -1.7f);
+		thorn[j]->shape = Body::triangle;
+		world.Add(thorn[j]);
+		++x;
+		++numBodies;
+	}
+
+	item = bodies + numBodies;
+	item->Set(Vec2(0.5f, 0.5f), FLT_MAX);
+	item->position.Set(walls[5]->position.x, walls[5]->position.y * 2.5f);
+	item->shape = Body::circle;
+	item->velocity = Vec2(-5.0f, 0.0f);
+	world.Add(item);
+	++numBodies;
+
+	player = bodies + numBodies;
+	player->Set(Vec2(1.0f, 1.0f), 100.0f);
+	player->position.Set(-7.0f, 1.0f);
+	player->shape = Body::circle;
+	world.Add(player);
+	++numBodies;
 }
 
 // A simple pendulum
@@ -155,7 +250,7 @@ static void Demo2(Body* b, Joint* j)
 	world.Add(b1);
 
 	Body* b2 = b + 1;
-	b2->Set(Vec2(1.0f, 1.0f), 100.0f);
+	b2->Set(Vec2(1.0f, 1.0f), 1100.0f);
 	b2->friction = 0.2f;
 	b2->position.Set(9.0f, 11.0f);
 	b2->rotation = 0.0f;
@@ -205,7 +300,7 @@ static void Demo3(Body* b, Joint* j)
 	world.Add(b);
 	++b; ++numBodies;
 
-	float friction[5] = {0.75f, 0.5f, 0.35f, 0.1f, 0.0f};
+	float friction[5] = { 0.75f, 0.5f, 0.35f, 0.1f, 0.0f };
 	for (int i = 0; i < 5; ++i)
 	{
 		b->Set(Vec2(0.5f, 0.5f), 25.0f);
@@ -347,7 +442,7 @@ static void Demo7(Body* b, Joint* j)
 
 	for (int i = 0; i < numPlanks; ++i)
 	{
-		j->Set(bodies+i, bodies+i+1, Vec2(-9.125f + 1.25f * i, 5.0f));
+		j->Set(bodies + i, bodies + i + 1, Vec2(-9.125f + 1.25f * i, 5.0f));
 		j->softness = softness;
 		j->biasFactor = biasFactor;
 
@@ -495,9 +590,10 @@ static void Demo9(Body* b, Joint* j)
 	}
 }
 
-void (*demos[])(Body* b, Joint* j) = {Demo1, Demo2, Demo3, Demo4, Demo5, Demo6, Demo7, Demo8, Demo9};
+
+void(*demos[])(Body* b, Joint* j) = { Demo1, Demo2, Demo3, Demo4, Demo5, Demo6, Demo7, Demo8, Demo9};
 const char* demoStrings[] = {
-	"Demo 1: A Single Box",
+	"Demo 1: Power Ball 1sik",
 	"Demo 2: Simple Pendulum",
 	"Demo 3: Varying Friction Coefficients",
 	"Demo 4: Randomized Stacking",
@@ -505,7 +601,7 @@ const char* demoStrings[] = {
 	"Demo 6: A Teeter",
 	"Demo 7: A Suspension Bridge",
 	"Demo 8: Dominos",
-	"Demo 9: Multi-pendulum"};
+	"Demo 9: Multi-pendulum" };
 
 static void InitDemo(int index)
 {
@@ -513,6 +609,11 @@ static void InitDemo(int index)
 	numBodies = 0;
 	numJoints = 0;
 	bomb = NULL;
+
+	isDead = false;
+	tab = 0.0f;
+	score = 0.0f;
+	timeStep = 0.0f;
 
 	demoIndex = index;
 	demos[index](bodies, joints);
@@ -522,6 +623,7 @@ static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int 
 {
 	if (action != GLFW_PRESS)
 	{
+		player->isJump = false;
 		return;
 	}
 
@@ -557,8 +659,25 @@ static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int 
 		break;
 
 	case GLFW_KEY_SPACE:
-		LaunchBomb();
+		if (timeStep == 0.0f && !isDead)
+		{
+			timeStep = 1.0f / 60.0f;
+		}
+		//LaunchBomb();
 		break;
+	case GLFW_KEY_UP:
+		if (player->isJump)
+			player->velocity = Vec2(0.0f, jump);
+		break;
+	case GLFW_KEY_DOWN:
+		player->velocity = Vec2(0.0f, -20.0f);
+		break;
+	//case GLFW_KEY_RIGHT:
+	//	player->velocity = Vec2(5.0f, 0.0f);
+	//	break;
+	//case GLFW_KEY_LEFT:
+	//	player->velocity = Vec2(-5.0f, 0.0f);
+	//	break;
 	}
 }
 
@@ -594,7 +713,7 @@ int main(int, char**)
 		return -1;
 	}
 
-	mainWindow = glfwCreateWindow(width, height, "box2d-lite", NULL, NULL);
+	mainWindow = glfwCreateWindow(width, height, "Box2D", NULL, NULL);
 	if (mainWindow == NULL)
 	{
 		fprintf(stderr, "Failed to open GLFW mainWindow.\n");
@@ -632,7 +751,7 @@ int main(int, char**)
 	glViewport(0, 0, width, height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	
+
 	float aspect = float(width) / float(height);
 	if (width >= height)
 	{
@@ -661,17 +780,26 @@ int main(int, char**)
 		ImGui::End();
 
 		DrawText(5, 5, demoStrings[demoIndex]);
-		DrawText(5, 35, "Keys: 1-9 Demos, Space to Launch the Bomb");
+		DrawText(5, 35, "Keys: 1-9 Demos, Space to Start");
 
 		char buffer[64];
-		sprintf(buffer, "(A)ccumulation %s", World::accumulateImpulses ? "ON" : "OFF");
+		//sprintf(buffer, "(A)ccumulation %s", World::accumulateImpulses ? "ON" : "OFF");
+		//DrawText(5, 65, buffer);
+
+		sprintf(buffer, "Score %.3f", score);
 		DrawText(5, 65, buffer);
 
-		sprintf(buffer, "(P)osition Correction %s", World::positionCorrection ? "ON" : "OFF");
+		sprintf(buffer, "Best Score %.3f", MaxScore);
+		DrawText(135.5, 65, buffer);
+
+		sprintf(buffer, "^ v Arrow Key is jump and Down");
 		DrawText(5, 95, buffer);
 
-		sprintf(buffer, "(W)arm Starting %s", World::warmStarting ? "ON" : "OFF");
-		DrawText(5, 125, buffer);
+		//sprintf(buffer, "(P)osition Correction %s", World::positionCorrection ? "ON" : "OFF");
+		//DrawText(5, 95, buffer);
+
+		//sprintf(buffer, "(W)arm Starting %s", World::warmStarting ? "ON" : "OFF");
+		//DrawText(5, 125, buffer);
 
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
@@ -683,7 +811,51 @@ int main(int, char**)
 
 		for (int i = 0; i < numJoints; ++i)
 			DrawJoint(joints + i);
+		
+		if (timeStep != 0)
+		{
+			player->rotation -= rot;
+			score += 0.156f;
+		}
+		
+		if (player->position.x < 13.5f && player->position.y < -0.5f)
+		{
+			isDead = true;
+			timeStep = 0;
+			if(score > MaxScore)
+				MaxScore = score;
+		}
 
+		for (int i = 0; i < 6; i++)
+		{
+			if (walls[i]->position.x < -21.0f)
+			{
+				walls[i]->Set(Vec2(1.0f, Random(1.0f, 3.0f)), FLT_MAX);
+				walls[i]->position.Set(21.0f, 0.5f * walls[i]->width.y);
+				walls[i]->tag = 1;
+				walls[i]->velocity = Vec2(-5.0f, 0.0f);
+				speed -= 1.0f;
+				timeStep = 1.0f / speed;
+				if (timeStep > 1.0f)
+					timeStep = 1.0f;
+			}
+		}
+		if (item->position.x < -21.0f)
+		{
+			item->position.Set(walls[5]->position.x, walls[5]->position.y * 2.5f);
+			item->velocity = Vec2(-5.0f, 0.0f);
+		}
+
+		if (player->isItem)
+		{
+			rot += 0.1;
+			player->velocity = Vec2(0.0f, 10.0f);
+			item->position.Set(35.0f, 20.0f);
+			item->velocity = Vec2(-5.0f, 0.0f);
+			score += 30.0f;
+			player->isJump = true;
+			player->isItem = false;
+		}
 		glPointSize(4.0f);
 		glColor3f(1.0f, 0.0f, 0.0f);
 		glBegin(GL_POINTS);

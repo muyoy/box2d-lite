@@ -20,7 +20,10 @@ Body::Body()
 	force.Set(0.0f, 0.0f);
 	torque = 0.0f;
 	friction = 0.2f;
-
+	tag = 0;
+	isJump = false;
+	isItem = false;
+	shape = Body::box;
 	width.Set(1.0f, 1.0f);
 	mass = FLT_MAX;
 	invMass = 0.0f;
@@ -37,10 +40,12 @@ void Body::Set(const Vec2& w, float m)
 	force.Set(0.0f, 0.0f);
 	torque = 0.0f;
 	friction = 0.2f;
-
+	shape = Body::box;
 	width = w;
 	mass = m;
-
+	isJump = false;
+	isItem = false;
+	tag = 0;
 	if (mass < FLT_MAX)
 	{
 		invMass = 1.0f / mass;

@@ -48,6 +48,15 @@ struct Vec2
 		return sqrtf(x * x + y * y);
 	}
 
+	void Normalize()
+	{
+		float length = Length();
+
+		float invLength = 1.0f / length;
+		x *= invLength;
+		y *= invLength;
+	}
+
 	float x, y;
 };
 

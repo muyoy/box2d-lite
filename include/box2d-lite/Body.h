@@ -26,13 +26,14 @@ struct Body
 
 	Vec2 position;
 	float rotation;
-
+	int tag;
+	bool isJump;
+	bool isItem;
 	Vec2 velocity;
 	float angularVelocity;
-
 	Vec2 force;
 	float torque;
-
+	enum Shape { box, circle, triangle } shape;
 	Vec2 width;
 
 	float friction;
